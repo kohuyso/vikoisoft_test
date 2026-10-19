@@ -40,12 +40,10 @@ describe('Reports API (e2e)', () => {
       .expect(200);
 
     expect(response.body.success).toBe(true);
-    expect(response.body.data.summary.total_users).toBe(3);
-    expect(response.body.data.users.length).toBe(3);
+    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(response.body.data.length).toBe(3);
 
-    const userNames = response.body.data.users.map(
-      (u: { name: string }) => u.name,
-    );
+    const userNames = response.body.data.map((u: { name: string }) => u.name);
     expect(userNames).toContain('Alice');
     expect(userNames).toContain('Bob');
     expect(userNames).toContain('Charlie');

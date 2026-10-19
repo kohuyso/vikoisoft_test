@@ -29,20 +29,17 @@ describe('ReportsService', () => {
 
     const report = await reportsService.generateAggregatedReport();
 
-    expect(report.summary.total_users).toBe(3);
-    expect(report.summary.total_activities).toBe(42 + 31 + 17); // 90
-    expect(report.users.length).toBe(3);
+    expect(report.length).toBe(3);
 
-    const alice = report.users.find((u) => u.name === 'Alice');
+    const alice = report.find((u) => u.name === 'Alice');
     expect(alice).toBeDefined();
     expect(alice?.last_login).toBe('2025-10-10');
     expect(alice?.activity_count).toBe(42);
-    expect(alice?.status).toBe('SUCCESS');
 
-    const bob = report.users.find((u) => u.name === 'Bob');
+    const bob = report.find((u) => u.name === 'Bob');
     expect(bob?.activity_count).toBe(31);
 
-    const charlie = report.users.find((u) => u.name === 'Charlie');
+    const charlie = report.find((u) => u.name === 'Charlie');
     expect(charlie?.activity_count).toBe(17);
   });
 
@@ -66,13 +63,11 @@ describe('ReportsService', () => {
 
     const report = await reportsService.generateAggregatedReport();
 
-    expect(report.summary.total_users).toBe(3);
-    const bob = report.users.find((u) => u.id === 2);
-    expect(bob?.status).toBe('TIMEOUT');
+    expect(report.length).toBe(3);
+    const bob = report.find((u) => u.id === 2);
     expect(bob?.activity_count).toBe(0);
 
-    const alice = report.users.find((u) => u.id === 1);
-    expect(alice?.status).toBe('SUCCESS');
+    const alice = report.find((u) => u.id === 1);
     expect(alice?.activity_count).toBe(42);
   });
 });

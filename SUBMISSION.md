@@ -12,7 +12,7 @@
 ### Câu 1: Thiết kế RESTful API endpoint `/api/orders`
 - **Mã nguồn:** Thư mục [`src/modules/orders/`](file:///Users/justhuy/.gemini/antigravity-ide/scratch/vikoisoft_test/src/modules/orders)
 - **Kiến trúc:** Phân tách 3 lớp rõ ràng theo Clean Architecture:
-  - `OrdersController` ([orders.controller.ts](file:///Users/justhuy/.gemini/antigravity-ide/scratch/vikoisoft_test/src/modules/orders/orders.controller.ts)): Định tuyến RESTful, OpenAPI Swagger decorator, mã trạng thái HTTP chuẩn (`201 Created` cho POST, `400 Bad Request` cho validation error, `404 Not Found` khi không tìm thấy đơn).
+  - `OrdersController` ([orders.controller.ts](file:///Users/justhuy/.gemini/antigravity-ide/scratch/vikoisoft_test/src/modules/orders/orders.controller.ts)): Định tuyến RESTful chuẩn, OpenAPI Swagger decorator, mã trạng thái HTTP chuẩn (`201 Created` cho POST tạo đơn hàng, `400 Bad Request` cho validation error).
   - `CreateOrderDto` ([create-order.dto.ts](file:///Users/justhuy/.gemini/antigravity-ide/scratch/vikoisoft_test/src/modules/orders/dto/create-order.dto.ts)): Sử dụng `class-validator` xác thực chặt chẽ: `user_id` (số nguyên dương), `items` (mảng đối tượng `{product_id, quantity}` không rỗng, quantity > 0), `note` (chuỗi tuỳ chọn).
   - `OrdersService` ([orders.service.ts](file:///Users/justhuy/.gemini/antigravity-ide/scratch/vikoisoft_test/src/modules/orders/orders.service.ts)): Xử lý nghiệp vụ, tự động tính tổng số lượng `total_items`, gán trạng thái ban đầu `PENDING`.
   - `OrdersRepository` ([orders.repository.ts](file:///Users/justhuy/.gemini/antigravity-ide/scratch/vikoisoft_test/src/modules/orders/repositories/orders.repository.ts)): In-memory mock database lưu trữ an toàn bằng `Map<number, OrderEntity>`.
@@ -22,8 +22,8 @@
 - **Mô phỏng External API:** Endpoint `GET /mock/external/:userId` với độ trễ ngẫu nhiên từ 2-5 giây đúng yêu cầu.
 - **Giải pháp tối ưu tốc độ tối đa:**
   1. **Song song hoá bằng `Promise.all`:** Thay vì gọi tuần tự làm tổng thời gian chờ lên tới $\approx 2s + 3s + 4.5s = 9.5s$, hệ thống gọi đồng thời cả 3 request external. Thời gian hoàn thành chỉ bằng request lâu nhất: $\max(delay_1, delay_2, delay_3) \approx 2-4.5s$ (nhanh hơn >65%).
-  2. **Quản lý Timeout & Fallback (Graceful Degradation):** Mỗi request có timeout bảo vệ (mặc định 4.5s). Nếu external API bị treo hoặc quá hạn, request đó trả về fallback `{ activity_count: 0, status: 'TIMEOUT' }` chứ không làm crash toàn bộ báo cáo của các người dùng khác.
-  3. **In-memory TTL Caching:** Kết quả hợp nhất được cache trong 60 giây. Các lượt truy cập tiếp theo trả về tức thì trong **< 5ms**.
+  2. **Quản lý Timeout & Fallback:** Mỗi request có timeout bảo vệ (mặc định 4.5s). Nếu external API bị treo hoặc quá hạn, request đó trả về fallback `{ activity_count: 0 }` chứ không làm crash toàn bộ báo cáo của các người dùng khác.
+  3. **Định dạng dữ liệu hợp nhất gọn gàng:** Trả về trực tiếp mảng danh sách người dùng kèm số lượng hoạt động hợp nhất sạch sẽ `[{ id, name, last_login, activity_count }]`, đồng thời có in-memory TTL caching giúp lượt gọi lặp lại phản hồi tức thì trong **< 5ms**.
 
 ### Câu 3: Thiết kế Notification Service chịu tải cao (10,000 notifications/phút)
 - **Mã nguồn:** Thư mục [`src/modules/notifications/`](file:///Users/justhuy/.gemini/antigravity-ide/scratch/vikoisoft_test/src/modules/notifications)

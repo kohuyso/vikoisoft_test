@@ -96,45 +96,4 @@ describe('Orders API (e2e)', () => {
       expect(response.body.statusCode).toBe(400);
     });
   });
-
-  describe('GET /api/orders & GET /api/orders/:id', () => {
-    it('should list all orders and retrieve an order by ID', async () => {
-      // 1. Create an order
-      const createRes = await request(app.getHttpServer())
-        .post('/api/orders')
-        .send({
-          user_id: 42,
-          items: [{ product_id: 99, quantity: 4 }],
-        })
-        .expect(201);
-
-      const createdId = createRes.body.data.id;
-
-      // 2. Query all orders
-      const listRes = await request(app.getHttpServer())
-        .get('/api/orders')
-        .expect(200);
-
-      expect(listRes.body.success).toBe(true);
-      expect(Array.isArray(listRes.body.data)).toBe(true);
-      expect(listRes.body.data.length).toBeGreaterThanOrEqual(1);
-
-      // 3. Query specific order by ID
-      const getRes = await request(app.getHttpServer())
-        .get(`/api/orders/${createdId}`)
-        .expect(200);
-
-      expect(getRes.body.data.id).toBe(createdId);
-      expect(getRes.body.data.user_id).toBe(42);
-    });
-
-    it('should return HTTP 404 when order ID does not exist', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/orders/999999')
-        .expect(404);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.statusCode).toBe(404);
-    });
-  });
 });

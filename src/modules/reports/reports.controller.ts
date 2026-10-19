@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Req } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { AggregatedReportResponse } from './entities/user-report.entity.js';
+import { MergedUserReportItem } from './entities/user-report.entity.js';
 import { ReportsService } from './reports.service.js';
 
 @ApiTags('Reports')
@@ -37,7 +37,7 @@ export class ReportsController {
     @Req() req: Request,
     @Query('forceRefresh') forceRefresh?: string,
     @Query('timeoutMs') timeoutMs?: string,
-  ): Promise<AggregatedReportResponse> {
+  ): Promise<MergedUserReportItem[]> {
     const isBypass = forceRefresh === 'true' || forceRefresh === '1';
     const parsedTimeout = timeoutMs ? parseInt(timeoutMs, 10) : undefined;
 

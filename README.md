@@ -239,44 +239,26 @@ curl "http://localhost:3000/api/report?forceRefresh=true"
 {
   "success": true,
   "statusCode": 200,
-  "data": {
-    "summary": {
-      "total_users": 3,
-      "total_activities": 90,
-      "total_execution_time_ms": 2341,
-      "strategy": "Parallel Promise.all with timeout guard & in-memory caching",
-      "concurrency_optimization": "Concurrent requests run simultaneously, bounding latency to max(delays) instead of sum(delays)"
+  "data": [
+    {
+      "id": 1,
+      "name": "Alice",
+      "last_login": "2025-10-10",
+      "activity_count": 42
     },
-    "users": [
-      {
-        "id": 1,
-        "name": "Alice",
-        "last_login": "2025-10-10",
-        "activity_count": 42,
-        "status": "SUCCESS",
-        "data_source": "external_api",
-        "latency_ms": 2150
-      },
-      {
-        "id": 2,
-        "name": "Bob",
-        "last_login": "2025-10-11",
-        "activity_count": 31,
-        "status": "SUCCESS",
-        "data_source": "external_api",
-        "latency_ms": 2335
-      },
-      {
-        "id": 3,
-        "name": "Charlie",
-        "last_login": "2025-10-12",
-        "activity_count": 17,
-        "status": "SUCCESS",
-        "data_source": "external_api",
-        "latency_ms": 2012
-      }
-    ]
-  },
+    {
+      "id": 2,
+      "name": "Bob",
+      "last_login": "2025-10-11",
+      "activity_count": 31
+    },
+    {
+      "id": 3,
+      "name": "Charlie",
+      "last_login": "2025-10-12",
+      "activity_count": 17
+    }
+  ],
   "timestamp": "2026-10-19T14:48:15.000Z"
 }
 ```
