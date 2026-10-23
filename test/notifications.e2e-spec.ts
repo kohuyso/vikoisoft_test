@@ -79,4 +79,37 @@ describe('Notifications API (e2e)', () => {
     expect(response.body.success).toBe(true);
     expect(Array.isArray(response.body.data)).toBe(true);
   });
+
+  it('POST /api/notifications/enqueue should reject invalid email format with 400', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/notifications/enqueue')
+      .send({
+        orderId: 501,
+        recipientEmail: 'not_an_email',
+        orderStatus: 'CONFIRMED',
+      })
+      .expect(400);
+
+    expect(response.body.success).toBe(false);
+    expect(response.body.statusCode).toBe(400);
+  });
+
+  it('POST /api/notifications/batch-benchmark should reject count > 5000 with 400', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/notifications/batch-benchmark')
+      .send({ count: 99999 })
+      .expect(400);
+
+    expect(response.body.success).toBe(false);
+    expect(response.body.statusCode).toBe(400);
+  });
+
+  it('GET /api/notifications/logs should reject negative limit with 400 (not 500)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/notifications/logs?limit=-5')
+      .expect(400);
+
+    expect(response.body.success).toBe(false);
+    expect(response.body.statusCode).toBe(400);
+  });
 });

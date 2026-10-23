@@ -48,4 +48,13 @@ describe('Reports API (e2e)', () => {
     expect(userNames).toContain('Bob');
     expect(userNames).toContain('Charlie');
   }, 10000);
+
+  it('GET /api/report with invalid timeoutMs should ignore NaN and fallback safely', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/report?timeoutMs=not_a_number')
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.length).toBe(3);
+  }, 10000);
 });

@@ -446,4 +446,3 @@ $ npm run test:e2e
 ```
 
 Tất cả tiêu chuẩn đánh giá của đề thi vòng 1 từ Vikoisoft đều đã được hoàn thiện vượt mức mong đợi, sẵn sàng đưa vào vận hành thực tế.
-# vikoisoft_test

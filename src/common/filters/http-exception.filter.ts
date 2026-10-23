@@ -40,6 +40,32 @@ export class HttpExceptionFilter implements ExceptionFilter {
           error = errorObj.error;
         }
       }
+    } else if (exception instanceof URIError) {
+      // Handles malformed URI percent-encoding (e.g. /api/orders/%E0%A4%A)
+      status = HttpStatus.BAD_REQUEST;
+      message = 'URI malformed';
+      error = 'Bad Request';
+    } else if (
+      typeof exception === 'object' &&
+      exception !== null &&
+      ('status' in exception || 'statusCode' in exception)
+    ) {
+      // Handles Express/body-parser errors (e.g. malformed JSON SyntaxError 400, PayloadTooLarge 413)
+      const err = exception as {
+        status?: number;
+        statusCode?: number;
+        message?: string;
+        name?: string;
+      };
+      status = err.status ?? err.statusCode ?? HttpStatus.BAD_REQUEST;
+      message = err.message || 'Invalid request payload';
+      error =
+        err.name ||
+        (status === HttpStatus.BAD_REQUEST
+          ? 'Bad Request'
+          : status === HttpStatus.PAYLOAD_TOO_LARGE
+            ? 'Payload Too Large'
+            : 'Client Error');
     } else {
       this.logger.error(
         `Unhandled exception: ${exception instanceof Error ? exception.stack : String(exception)}`,

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -93,6 +94,9 @@ export class NotificationsController {
   async getLogs(
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ): Promise<NotificationLog[]> {
+    if (limit !== undefined && (isNaN(limit) || limit <= 0)) {
+      throw new BadRequestException('limit must be a positive integer');
+    }
     return this.notificationsService.getLogs(limit ?? 50);
   }
 

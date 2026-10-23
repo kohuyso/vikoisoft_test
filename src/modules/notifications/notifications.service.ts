@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { EnqueueNotificationDto } from './dto/enqueue-notification.dto.js';
 import { NotificationJob } from './entities/notification-job.entity.js';
 import { NotificationLog } from './entities/notification-log.entity.js';
@@ -22,6 +22,23 @@ export class NotificationsService {
     jobId: string;
     status: string;
   } {
+    if (!dto) {
+      throw new BadRequestException(
+        'Notification request body cannot be empty',
+      );
+    }
+    if (!dto.orderId || typeof dto.orderId !== 'number' || dto.orderId <= 0) {
+      throw new BadRequestException('orderId must be a positive integer');
+    }
+    if (!dto.recipientEmail || typeof dto.recipientEmail !== 'string') {
+      throw new BadRequestException(
+        'recipientEmail must be a valid email string',
+      );
+    }
+    if (!dto.orderStatus || typeof dto.orderStatus !== 'string') {
+      throw new BadRequestException('orderStatus must be a non-empty string');
+    }
+
     const job = this.queueService.enqueue(
       dto.orderId,
       dto.recipientEmail,
@@ -45,6 +62,15 @@ export class NotificationsService {
     metrics: QueueMetrics;
     message: string;
   } {
+    if (!count || typeof count !== 'number' || count <= 0) {
+      throw new BadRequestException('count must be a positive integer');
+    }
+    if (count > 5000) {
+      throw new BadRequestException(
+        'count cannot exceed 5000 per benchmark run',
+      );
+    }
+
     for (let i = 1; i <= count; i++) {
       const orderId = 2000 + i;
       // Inject some flaky and failed emails to demonstrate retry & DLQ handling
@@ -76,6 +102,10 @@ export class NotificationsService {
   }
 
   async getLogs(limit = 50): Promise<NotificationLog[]> {
-    return this.logRepository.getRecentLogs(limit);
+    const safeLimit =
+      typeof limit === 'number' && !isNaN(limit) && limit > 0
+        ? Math.min(limit, 1000)
+        : 50;
+    return this.logRepository.getRecentLogs(safeLimit);
   }
 }

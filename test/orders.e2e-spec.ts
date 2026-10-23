@@ -95,5 +95,126 @@ describe('Orders API (e2e)', () => {
       expect(response.body.success).toBe(false);
       expect(response.body.statusCode).toBe(400);
     });
+
+    it('should cleanly consolidate duplicate product_ids in items array', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/orders')
+        .send({
+          user_id: 2,
+          items: [
+            { product_id: 101, quantity: 2 },
+            { product_id: 101, quantity: 3 },
+          ],
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.items.length).toBe(1);
+      expect(response.body.data.items[0]).toEqual({
+        product_id: 101,
+        quantity: 5,
+      });
+      expect(response.body.data.total_items).toBe(5);
+    });
+
+    it('should reject unknown fields (whitelist & forbidNonWhitelisted)', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/orders')
+        .send({
+          user_id: 1,
+          items: [{ product_id: 101, quantity: 1 }],
+          malicious_field: 'exploit',
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.statusCode).toBe(400);
+    });
+
+    it('should reject line item quantity exceeding 10,000', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/orders')
+        .send({
+          user_id: 1,
+          items: [{ product_id: 101, quantity: 50000 }],
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.statusCode).toBe(400);
+    });
+  });
+
+  describe('GET /api/orders and GET /api/orders/:id', () => {
+    it('should retrieve all orders and individual order by ID', async () => {
+      // 1. Create an order
+      const createRes = await request(app.getHttpServer())
+        .post('/api/orders')
+        .send({
+          user_id: 99,
+          items: [{ product_id: 301, quantity: 2 }],
+        })
+        .expect(201);
+
+      const orderId = createRes.body.data.id;
+
+      // 2. GET all orders
+      const listRes = await request(app.getHttpServer())
+        .get('/api/orders')
+        .expect(200);
+
+      expect(listRes.body.success).toBe(true);
+      expect(Array.isArray(listRes.body.data)).toBe(true);
+      expect(
+        listRes.body.data.some((o: { id: number }) => o.id === orderId),
+      ).toBe(true);
+
+      // 3. GET order by ID
+      const detailRes = await request(app.getHttpServer())
+        .get(`/api/orders/${orderId}`)
+        .expect(200);
+
+      expect(detailRes.body.success).toBe(true);
+      expect(detailRes.body.data.id).toBe(orderId);
+      expect(detailRes.body.data.user_id).toBe(99);
+    });
+
+    it('should return 404 Not Found for non-existent order ID', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/orders/999999')
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.statusCode).toBe(404);
+    });
+
+    it('should return 400 Bad Request for non-numeric order ID', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/orders/not-a-number')
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.statusCode).toBe(400);
+    });
+
+    it('should return 400 Bad Request (not 500) for malformed JSON payload', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/orders')
+        .set('Content-Type', 'application/json')
+        .send('{ "user_id": 1, invalid_json_syntax }')
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.statusCode).toBe(400);
+    });
+
+    it('should return 400 Bad Request (not 500) for malformed URI encoding', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/orders/%E0%A4%A')
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.statusCode).toBe(400);
+    });
   });
 });

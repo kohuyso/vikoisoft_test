@@ -1,5 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { MergedUserReportItem } from './entities/user-report.entity.js';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import {
+  LocalUserProfile,
+  MergedUserReportItem,
+} from './entities/user-report.entity.js';
 import { LocalUserRepository } from './repositories/local-user.repository.js';
 import { ExternalApiService } from './services/external-api.service.js';
 
@@ -28,24 +31,47 @@ export class ReportsService {
     const bypassCache = options?.bypassCache ?? false;
 
     // 1. Fetch local users (simulated DB read)
-    const localUsers = await this.localUserRepository.findAllUsers();
+    let localUsers: LocalUserProfile[] = [];
+    try {
+      localUsers = (await this.localUserRepository.findAllUsers()) ?? [];
+    } catch (err) {
+      this.logger.error(
+        `Failed to query local users database: ${(err as Error).message}`,
+      );
+      throw new HttpException(
+        'Database query failed. Please try again later.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
 
     // 2. Concurrently fetch external stats using Promise.all
     const userPromises = localUsers.map(
       async (user): Promise<MergedUserReportItem> => {
-        const stats = await this.externalApiService.fetchUserStats(
-          user.id,
-          timeoutMs,
-          options?.baseUrl,
-          bypassCache,
-        );
+        try {
+          const stats = await this.externalApiService.fetchUserStats(
+            user.id,
+            timeoutMs,
+            options?.baseUrl,
+            bypassCache,
+          );
 
-        return {
-          id: user.id,
-          name: user.name,
-          last_login: user.last_login,
-          activity_count: stats.activity_count,
-        };
+          return {
+            id: user.id,
+            name: user.name,
+            last_login: user.last_login,
+            activity_count: stats.activity_count,
+          };
+        } catch (err) {
+          this.logger.warn(
+            `Unexpected error aggregating user ${user.id}: ${(err as Error).message}. Applying fallback.`,
+          );
+          return {
+            id: user.id,
+            name: user.name,
+            last_login: user.last_login,
+            activity_count: 0,
+          };
+        }
       },
     );
 

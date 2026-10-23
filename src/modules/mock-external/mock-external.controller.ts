@@ -32,9 +32,13 @@ export class MockExternalController {
     @Query('delayMs') customDelay?: string,
   ): Promise<{ activity_count: number }> {
     // 2 - 5s delay as requested in test prompt (or customDelay for fast tests)
-    const delay = customDelay
-      ? parseInt(customDelay, 10)
-      : Math.floor(Math.random() * 3000) + 2000;
+    const parsedDelay =
+      customDelay && !isNaN(Number(customDelay)) && Number(customDelay) >= 0
+        ? parseInt(customDelay, 10)
+        : Math.floor(Math.random() * 3000) + 2000;
+
+    // Cap delay at 10s to prevent hanging requests
+    const delay = Math.min(parsedDelay, 10000);
 
     await new Promise((resolve) => setTimeout(resolve, delay));
 

@@ -39,7 +39,10 @@ export class ReportsController {
     @Query('timeoutMs') timeoutMs?: string,
   ): Promise<MergedUserReportItem[]> {
     const isBypass = forceRefresh === 'true' || forceRefresh === '1';
-    const parsedTimeout = timeoutMs ? parseInt(timeoutMs, 10) : undefined;
+    const parsedTimeout =
+      timeoutMs && !isNaN(Number(timeoutMs)) && Number(timeoutMs) > 0
+        ? parseInt(timeoutMs, 10)
+        : undefined;
 
     // Detect server baseUrl from request
     const protocol = req.protocol || 'http';

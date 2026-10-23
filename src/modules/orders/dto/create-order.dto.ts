@@ -1,12 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   ArrayNotEmpty,
   IsArray,
   IsInt,
   IsOptional,
   IsPositive,
   IsString,
+  Max,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
@@ -20,6 +22,7 @@ export class OrderItemDto {
   @ApiProperty({ example: 2, description: 'Quantity of items ordered' })
   @IsInt({ message: 'quantity must be an integer' })
   @IsPositive({ message: 'quantity must be a positive integer (> 0)' })
+  @Max(10000, { message: 'quantity cannot exceed 10,000 per line item' })
   quantity!: number;
 }
 
@@ -39,6 +42,9 @@ export class CreateOrderDto {
   })
   @IsArray({ message: 'items must be an array' })
   @ArrayNotEmpty({ message: 'items array cannot be empty' })
+  @ArrayMaxSize(100, {
+    message: 'items array cannot exceed 100 items per order',
+  })
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items!: OrderItemDto[];
